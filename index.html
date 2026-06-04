@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enhancement Strategy Optimizer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1220;
+      color: #f5f7ff;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(108, 92, 231, 0.28), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(0, 206, 201, 0.16), transparent 35%),
+        #0f1220;
+    }
+
+    main {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 0 0 28px;
+      color: #aeb6d9;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .panel {
+      background: rgba(20, 24, 44, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(16px);
+      margin-bottom: 24px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 20px;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 10px;
+    }
+
+    label,
+    .group-label {
+      color: #d9def7;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #eef1ff;
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    button.active {
+      background: linear-gradient(135deg, #7c5cff, #29d3c4);
+      color: white;
+      box-shadow: 0 10px 28px rgba(124, 92, 255, 0.3);
+    }
+
+    input {
+      width: min(360px, 100%);
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #7c5cff;
+      box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.18);
+    }
+
+    .hint {
+      color: #8f99c6;
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .summary {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cfd6f5;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 20px;
+      padding: 18px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.045)),
+        rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card.best {
+      border-color: rgba(41, 211, 196, 0.65);
+      box-shadow: 0 0 0 1px rgba(41, 211, 196, 0.18), 0 20px 50px rgba(41, 211, 196, 0.1);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(124, 92, 255, 0.18), transparent 45%);
+      pointer-events: none;
+    }
+
+    .code {
+      position: relative;
+      display: inline-flex;
+      gap: 4px;
+      font-size: 1.85rem;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+
+    .digit {
+      width: 36px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat {
+      position: relative;
+      display: grid;
+      gap: 4px;
+      margin-top: 12px;
+    }
+
+    .stat-label {
+      color: #9fa9d2;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+
+    .stat-value {
+      color: #fff;
+      font-size: 1.08rem;
+      font-weight: 850;
+    }
+
+    .empty {
+      color: #aeb6d9;
+      line-height: 1.6;
+    }
+
+    @media (min-width: 760px) {
+      .controls {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>New Starforce Cost Calculator</h1>
+    <p class="subtitle">
+      Assumes -30% boom reduction.
+    </p>
+
+    <section class="panel controls">
+      <div class="control-group">
+        <div class="group-label">Item type</div>
+        <div class="button-row" id="itemButtons">
+          <button data-multiplier="0.512">160 item</button>
+          <button data-multiplier="1" class="active">200 item</button>
+          <button data-multiplier="1.953">250 item</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="group-label">Discount</div>
+        <div class="button-row">
+          <button id="discountButton">30% off all costs</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="replacementCost">Replacement cost</label>
+        <input
+          id="replacementCost"
+          type="text"
+          inputmode="numeric"
+          placeholder="Leave blank to show all optimal strategies"
+        />
+        <div class="hint">
+          When entered, only the least expensive strategy is shown. The displayed cost is for 0 to 22 and excludes replacement cost.
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="summary" id="summary"></div>
+      <div class="results" id="results"></div>
+    </section>
+  </main>
+
+  <script>
+    const INTERNAL_FIXED_COST = 4820000000;
+
+    const BASE_DATA = [
+      { level: 0, option: 1, cost: 324061900, success: .15, destroy: .0476 },
+      { level: 0, option: 2, cost: 648123900, success: .12, destroy: .0308 },
+      { level: 0, option: 3, cost: 1134216700, success: .10, destroy: .0126 },
+      { level: 0, option: 4, cost: 2106402500, success: .08, destroy: 0 },
+
+      { level: 1, option: 1, cost: 578974200, success: .15, destroy: .0595 },
+      { level: 1, option: 2, cost: 1157948400, success: .12, destroy: .04312 },
+      { level: 1, option: 3, cost: 2026409700, success: .10, destroy: .0252 },
+      { level: 1, option: 4, cost: 3763332300, success: .08, destroy: 0 },
+
+      { level: 2, option: 1, cost: 148612400, success: .3, destroy: .0735 },
+      { level: 2, option: 2, cost: 297224800, success: .25, destroy: .0525 },
+      { level: 2, option: 3, cost: 520143400, success: .2, destroy: .028 },
+      { level: 2, option: 4, cost: 965980500, success: .15, destroy: 0 },
+
+      { level: 3, option: 1, cost: 269601800, success: .15, destroy: .08925 },
+      { level: 3, option: 2, cost: 539203600, success: .12, destroy: .0616 },
+      { level: 3, option: 3, cost: 943606400, success: .10, destroy: .0315 },
+      { level: 3, option: 4, cost: 1752441800, success: .08, destroy: 0 },
+    ];
+
+    let costMultiplier = 1;
+    let discountEnabled = false;
+
+    const itemButtons = document.querySelectorAll("#itemButtons button");
+    const discountButton = document.querySelector("#discountButton");
+    const replacementInput = document.querySelector("#replacementCost");
+    const resultsEl = document.querySelector("#results");
+    const summaryEl = document.querySelector("#summary");
+
+    itemButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        itemButtons.forEach(b => b.classList.remove("active"));
+        button.classList.add("active");
+        costMultiplier = Number(button.dataset.multiplier);
+        render();
+      });
+    });
+
+    discountButton.addEventListener("click", () => {
+      discountEnabled = !discountEnabled;
+      discountButton.classList.toggle("active", discountEnabled);
+      render();
+    });
+
+    replacementInput.addEventListener("input", () => {
+      const cursorFromEnd = replacementInput.value.length - replacementInput.selectionStart;
+      const numericValue = parseFormattedInteger(replacementInput.value);
+
+      replacementInput.value = numericValue === "" ? "" : formatIntegerString(numericValue);
+
+      const nextCursor = Math.max(0, replacementInput.value.length - cursorFromEnd);
+      replacementInput.setSelectionRange(nextCursor, nextCursor);
+
+      render();
+    });
+
+    function parseFormattedInteger(value) {
+      return value.replace(/[^\d]/g, "");
+    }
+
+    function formatIntegerString(value) {
+      return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    function getScaledData() {
+      const discountMultiplier = discountEnabled ? 0.7 : 1;
+      const totalMultiplier = costMultiplier * discountMultiplier;
+
+      const byStep = [[], [], [], []];
+
+      for (const row of BASE_DATA) {
+        byStep[row.level].push({
+          ...row,
+          cost: row.cost * totalMultiplier,
+          fail: 1 - row.success - row.destroy,
+        });
+      }
+
+      return byStep;
+    }
+
+    function enumerateStrategies(byStep) {
+      const strategies = [];
+
+      for (const a of byStep[0]) {
+        for (const b of byStep[1]) {
+          for (const c of byStep[2]) {
+            for (const d of byStep[3]) {
+              const picks = [a, b, c, d];
+              const code = picks.map(p => p.option).join("");
+              const displayCost = expectedNonReplacementCost(picks);
+              const destroyed = expectedDestructions(picks);
+
+              strategies.push({
+                code,
+                picks,
+                displayCost,
+                destroyed,
+              });
+            }
+          }
+        }
+      }
+
+      return strategies;
+    }
+
+    function expectedNonReplacementCost(picks) {
+      const matrix = [];
+      const rhs = [];
+
+      for (let i = 0; i < 4; i++) {
+        const pick = picks[i];
+        const row = [0, 0, 0, 0];
+
+        row[i] += 1 - pick.fail;
+        if (i + 1 < 4) row[i + 1] -= pick.success;
+        row[0] -= pick.destroy;
+
+        matrix.push(row);
+        rhs.push(pick.cost + pick.destroy * INTERNAL_FIXED_COST);
+      }
+
+      const values = solveLinearSystem(matrix, rhs);
+
+      return INTERNAL_FIXED_COST + values[0];
+    }
+
+    function expectedDestructions(picks) {
+      const matrix = [];
+      const rhs = [];
+
+      for (let i = 0; i < 4; i++) {
+        const pick = picks[i];
+        const row = [0, 0, 0, 0];
+
+        row[i] += 1 - pick.fail;
+        if (i + 1 < 4) row[i + 1] -= pick.success;
+        row[0] -= pick.destroy;
+
+        matrix.push(row);
+        rhs.push(pick.destroy);
+      }
+
+      return solveLinearSystem(matrix, rhs)[0];
+    }
+
+    function solveLinearSystem(matrix, rhs) {
+      const n = rhs.length;
+      const a = matrix.map((row, i) => [...row, rhs[i]]);
+
+      for (let col = 0; col < n; col++) {
+        let pivot = col;
+
+        for (let row = col + 1; row < n; row++) {
+          if (Math.abs(a[row][col]) > Math.abs(a[pivot][col])) {
+            pivot = row;
+          }
+        }
+
+        if (Math.abs(a[pivot][col]) < 1e-12) {
+          throw new Error("Cannot solve strategy system.");
+        }
+
+        [a[col], a[pivot]] = [a[pivot], a[col]];
+
+        const divisor = a[col][col];
+        for (let j = col; j <= n; j++) {
+          a[col][j] /= divisor;
+        }
+
+        for (let row = 0; row < n; row++) {
+          if (row === col) continue;
+
+          const factor = a[row][col];
+          for (let j = col; j <= n; j++) {
+            a[row][j] -= factor * a[col][j];
+          }
+        }
+      }
+
+      return a.map(row => row[n]);
+    }
+
+    function getParetoOptimal(strategies) {
+      return strategies
+        .filter(candidate => {
+          return !strategies.some(other => {
+            const noWorse =
+              other.displayCost <= candidate.displayCost + 1e-6 &&
+              other.destroyed <= candidate.destroyed + 1e-12;
+
+            const strictlyBetter =
+              other.displayCost < candidate.displayCost - 1e-6 ||
+              other.destroyed < candidate.destroyed - 1e-12;
+
+            return noWorse && strictlyBetter;
+          });
+        })
+        .sort((a, b) => a.displayCost - b.displayCost);
+    }
+
+    function getCheapestWithReplacement(strategies, replacementCost) {
+      return [...strategies].sort((a, b) => {
+        const totalA = a.displayCost + a.destroyed * replacementCost;
+        const totalB = b.displayCost + b.destroyed * replacementCost;
+
+        if (Math.abs(totalA - totalB) > 1e-6) return totalA - totalB;
+        if (Math.abs(a.displayCost - b.displayCost) > 1e-6) return a.displayCost - b.displayCost;
+        return a.destroyed - b.destroyed;
+      })[0];
+    }
+
+    function render() {
+      const replacementRaw = parseFormattedInteger(replacementInput.value);
+      const hasReplacement = replacementRaw !== "";
+      const replacementCost = hasReplacement ? Number(replacementRaw) : 0;
+
+      const byStep = getScaledData();
+      const allStrategies = enumerateStrategies(byStep);
+
+      let displayedStrategies;
+
+      if (hasReplacement) {
+        displayedStrategies = [getCheapestWithReplacement(allStrategies, replacementCost)];
+      } else {
+        displayedStrategies = getParetoOptimal(allStrategies);
+      }
+
+      summaryEl.innerHTML = `
+        <div class="pill">${hasReplacement ? "Showing cheapest strategy" : "Showing optimal strategy set"}</div>
+        <div class="pill">${displayedStrategies.length} shown</div>
+        <div class="pill">${discountEnabled ? "30% discount active" : "No discount"}</div>
+      `;
+
+      if (displayedStrategies.length === 0) {
+        resultsEl.innerHTML = `<div class="empty">No strategies found.</div>`;
+        return;
+      }
+
+      resultsEl.innerHTML = displayedStrategies
+        .map((strategy, index) => renderStrategyCard(strategy, hasReplacement && index === 0))
+        .join("");
+    }
+
+    function renderStrategyCard(strategy, isBest) {
+      const digits = strategy.code
+        .split("")
+        .map(digit => `<span class="digit">${digit}</span>`)
+        .join("");
+
+      return `
+        <article class="card ${isBest ? "best" : ""}">
+          <div class="code">${digits}</div>
+
+          <div class="stat">
+            <div class="stat-label">Expected cost</div>
+            <div class="stat-value">${formatMoney(strategy.displayCost)}</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-label">Expected destroyed</div>
+            <div class="stat-value">${formatNumber(strategy.destroyed)}</div>
+          </div>
+        </article>
+      `;
+    }
+
+    function formatMoney(value) {
+      return Math.round(value).toLocaleString("en-US");
+    }
+
+    function formatNumber(value) {
+      return value.toLocaleString("en-US", {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
