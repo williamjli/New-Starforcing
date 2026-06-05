@@ -356,17 +356,17 @@
     }
 
     function getInitialBaseCost() {
-      return discountEnabled
+      return (discountEnabled
         ? INITIAL_BASE_COST.discounted
-        : INITIAL_BASE_COST.normal;
+        : INITIAL_BASE_COST.normal) * costMultiplier;
     }
 
     function getDestroyBaseCost(stepIndex) {
       const cost = DESTROY_BASE_COST_BY_STEP[stepIndex];
 
-      return discountEnabled
+      return (discountEnabled
         ? cost.discounted
-        : cost.normal;
+        : cost.normal) * costMultiplier;
     }
 
     function applySuccessBoost(row) {
