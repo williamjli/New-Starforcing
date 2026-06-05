@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Enhancement Strategy Optimizer</title>
+  <title>GMST Starforcing Strategies</title>
   <style>
     :root {
       color-scheme: dark;
@@ -220,9 +220,9 @@
 </head>
 <body>
   <main>
-    <h1>New Starforce Cost Calculator</h1>
+    <h1>GMST Starforcing Strategies</h1>
     <p class="subtitle">
-      Assumes -30% boom reduction.
+      Optimizer for 0 to 22 strategies. Star-catching assumed, -30% booms assumed.
     </p>
 
     <section class="panel controls">
@@ -248,10 +248,10 @@
           id="replacementCost"
           type="text"
           inputmode="numeric"
-          placeholder="Leave blank to show all optimal strategies"
+          placeholder='Leave blank to show all "non-dumb" strategies'
         />
         <div class="hint">
-          When entered, only the least expensive strategy is shown. The displayed cost is for 0 to 22 and excludes replacement cost.
+          How much you value a spare at. When entered, only the optimal strategy is shown with the value in mind. The displayed cost includes only the cost of starforcing, not of getting spares.
         </div>
       </div>
     </section>
@@ -263,7 +263,31 @@
   </main>
 
   <script>
-    const INTERNAL_FIXED_COST = 4820000000;
+    const SUCCESS_RATE_MULTIPLIER = 1.05;
+
+    const INITIAL_BASE_COST = {
+      normal: 4820000000,
+      discounted: 4170000000,
+    };
+
+    const DESTROY_BASE_COST_BY_STEP = [
+      {
+        normal: 4850000000,
+        discounted: 4150000000,
+      },
+      {
+        normal: 4850000000,
+        discounted: 4150000000,
+      },
+      {
+        normal: 3970000000,
+        discounted: 3570000000,
+      },
+      {
+        normal: 2490000000,
+        discounted: 2240000000,
+      },
+    ];
 
     const BASE_DATA = [
       { level: 0, option: 1, cost: 324061900, success: .15, destroy: .0476 },
@@ -331,6 +355,43 @@
       return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
+    function getInitialBaseCost() {
+      return discountEnabled
+        ? INITIAL_BASE_COST.discounted
+        : INITIAL_BASE_COST.normal;
+    }
+
+    function getDestroyBaseCost(stepIndex) {
+      const cost = DESTROY_BASE_COST_BY_STEP[stepIndex];
+
+      return discountEnabled
+        ? cost.discounted
+        : cost.normal;
+    }
+
+    function applySuccessBoost(row) {
+      const originalFail = 1 - row.success - row.destroy;
+      const originalNonSuccess = originalFail + row.destroy;
+      const boostedSuccess = Math.min(row.success * SUCCESS_RATE_MULTIPLIER, 1);
+      const newNonSuccess = 1 - boostedSuccess;
+
+      if (originalNonSuccess <= 0) {
+        return {
+          success: boostedSuccess,
+          fail: 0,
+          destroy: 0,
+        };
+      }
+
+      const nonSuccessScale = newNonSuccess / originalNonSuccess;
+
+      return {
+        success: boostedSuccess,
+        fail: originalFail * nonSuccessScale,
+        destroy: row.destroy * nonSuccessScale,
+      };
+    }
+
     function getScaledData() {
       const discountMultiplier = discountEnabled ? 0.7 : 1;
       const totalMultiplier = costMultiplier * discountMultiplier;
@@ -338,10 +399,14 @@
       const byStep = [[], [], [], []];
 
       for (const row of BASE_DATA) {
+        const boostedRates = applySuccessBoost(row);
+
         byStep[row.level].push({
           ...row,
           cost: row.cost * totalMultiplier,
-          fail: 1 - row.success - row.destroy,
+          success: boostedRates.success,
+          fail: boostedRates.fail,
+          destroy: boostedRates.destroy,
         });
       }
 
@@ -387,12 +452,12 @@
         row[0] -= pick.destroy;
 
         matrix.push(row);
-        rhs.push(pick.cost + pick.destroy * INTERNAL_FIXED_COST);
+        rhs.push(pick.cost + pick.destroy * getDestroyBaseCost(i));
       }
 
       const values = solveLinearSystem(matrix, rhs);
 
-      return INTERNAL_FIXED_COST + values[0];
+      return getInitialBaseCost() + values[0];
     }
 
     function expectedDestructions(picks) {
